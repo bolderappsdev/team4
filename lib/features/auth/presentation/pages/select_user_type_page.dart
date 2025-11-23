@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'attendee_sign_up_page.dart';
 
 /// Page where users select their account type (Attendee or Organizer).
 class SelectUserTypePage extends StatefulWidget {
@@ -105,12 +106,20 @@ class _SelectUserTypePageState extends State<SelectUserTypePage> {
                 isEnabled: _selectedUserType != null,
                 onPressed: () {
                   if (_selectedUserType != null) {
-                    // TODO: Navigate to sign up page based on selected user type
-                    // if (_selectedUserType == 'attendee') {
-                    //   Navigator.push(context, ...);
-                    // } else {
-                    //   Navigator.push(context, ...);
-                    // }
+                    if (_selectedUserType == 'attendee') {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const AttendeeSignUpPage(),
+                        ),
+                      );
+                    } else {
+                      // TODO: Navigate to organizer sign up page
+                      // Navigator.of(context).push(
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const OrganizerSignUpPage(),
+                      //   ),
+                      // );
+                    }
                   }
                 },
               ),
