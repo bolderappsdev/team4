@@ -4,6 +4,7 @@ import 'package:leadright/di/injection_container.dart';
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:leadright/features/events/domain/entities/event.dart';
 import 'package:leadright/features/events/presentation/bloc/events_bloc.dart';
+import 'package:leadright/features/events/presentation/pages/event_details_page.dart';
 import 'package:leadright/features/events/presentation/widgets/organizer_event_card.dart';
 
 /// Home page for organizers displaying their events with management capabilities.
@@ -67,9 +68,10 @@ class _OrganizerHomePageState extends State<OrganizerHomePage> {
                       // Header Section
                       _HeaderSection(
                         onCreateEvent: () {
-                          // TODO: Navigate to create event page
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Create Event - Coming soon')),
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const EventDetailsPage(),
+                            ),
                           );
                         },
                       ),
