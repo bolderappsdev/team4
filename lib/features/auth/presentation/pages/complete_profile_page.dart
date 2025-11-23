@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:leadright/features/auth/presentation/pages/email_verification_page.dart';
 
 /// Page for completing user profile after sign up.
 class CompleteProfilePage extends StatefulWidget {
@@ -107,15 +108,15 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   void _handleContinue() {
     if (_formKey.currentState?.validate() ?? false) {
       // TODO: Implement profile completion logic
-      // For now, just show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile completed successfully!'),
-          backgroundColor: Colors.green,
+      // Navigate to email verification page
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => BlocProvider.value(
+            value: context.read<AuthBloc>(),
+            child: const EmailVerificationPage(),
+          ),
         ),
       );
-      // Navigate to next page or home
-      // Navigator.of(context).pushReplacement(...);
     }
   }
 
