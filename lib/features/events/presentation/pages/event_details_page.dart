@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:leadright/features/events/presentation/models/event_creation_data.dart';
+import 'ticketing_setup_page.dart';
 
 /// First page in the event creation process (1/4).
 /// Collects basic event details: title, theme, description, date, time, and location.
@@ -160,9 +162,36 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         return;
       }
 
-      // TODO: Navigate to next page (Ticketing page - 2/4)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Continue to Ticketing - Coming soon')),
+      // Combine date and time
+      final startAt = DateTime(
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        _selectedTime!.hour,
+        _selectedTime!.minute,
+      );
+      final endAt = startAt.add(const Duration(hours: 2)); // Default 2 hour event
+
+      // Create event data
+      final eventData = EventCreationData(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        theme: _selectedTheme!,
+        startAt: startAt,
+        endAt: endAt,
+        location: _locationController.text,
+        ticketName: 'General Admission', // Default, will be updated in ticketing page
+        price: 0.0, // Default, will be updated in ticketing page
+        availability: 100, // Default, will be updated in ticketing page
+        coverImage: null,
+        thumbnailImage: null,
+      );
+
+      // Navigate to next page (Ticketing page - 2/4)
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => TicketingSetupPage(eventData: eventData),
+        ),
       );
     }
   }

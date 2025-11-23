@@ -22,3 +22,13 @@ class FetchOrganizerEvents extends EventsEvent {
   @override
   List<Object?> get props => [orgId];
 }
+
+/// Event to create a new event.
+class CreateEventRequested extends EventsEvent {
+  final Event event;
+
+  const CreateEventRequested(this.event);
+
+  @override
+  List<Object?> get props => [event];
+}

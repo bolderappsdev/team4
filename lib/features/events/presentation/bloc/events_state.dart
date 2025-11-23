@@ -37,3 +37,18 @@ class EventsError extends EventsState {
   @override
   List<Object?> get props => [message];
 }
+
+/// State when an event is being created.
+class EventCreating extends EventsState {
+  const EventCreating();
+}
+
+/// State when an event has been created successfully.
+class EventCreated extends EventsState {
+  final Event event;
+
+  const EventCreated(this.event);
+
+  @override
+  List<Object?> get props => [event];
+}

@@ -6,6 +6,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/event.dart';
+import '../../domain/usecases/create_event.dart';
 import '../../domain/usecases/get_organizer_events.dart';
 import '../../domain/usecases/get_upcoming_events.dart';
 
@@ -17,13 +18,16 @@ part 'events_state.dart';
 class EventsBloc extends Bloc<EventsEvent, EventsState> {
   final GetUpcomingEvents getUpcomingEvents;
   final GetOrganizerEvents getOrganizerEvents;
+  final CreateEvent createEvent;
 
   EventsBloc(
     this.getUpcomingEvents,
     this.getOrganizerEvents,
+    this.createEvent,
   ) : super(const EventsInitial()) {
     on<FetchUpcomingEvents>(_onFetchUpcomingEvents);
     on<FetchOrganizerEvents>(_onFetchOrganizerEvents);
+    on<CreateEventRequested>(_onCreateEventRequested);
   }
 
   /// Listen to upcoming events stream and emit states accordingly.
@@ -65,6 +69,21 @@ class EventsBloc extends Bloc<EventsEvent, EventsState> {
       onError: (error, stackTrace) {
         return EventsError('An unexpected error occurred: ${error.toString()}');
       },
+    );
+  }
+
+  /// Handle event creation request.
+  Future<void> _onCreateEventRequested(
+    CreateEventRequested event,
+    Emitter<EventsState> emit,
+  ) async {
+    emit(const EventCreating());
+
+    final result = await createEvent(CreateEventParams(event: event.event));
+
+    result.fold(
+      (failure) => emit(EventsError(failure.message)),
+      (createdEvent) => emit(EventCreated(createdEvent)),
     );
   }
 }
