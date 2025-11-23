@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:leadright/features/auth/presentation/pages/complete_profile_page.dart';
 
 /// Page for Attendee account creation.
 class AttendeeSignUpPage extends StatefulWidget {
@@ -26,16 +29,38 @@ class _AttendeeSignUpPageState extends State<AttendeeSignUpPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthAuthenticated) {
+          // Navigate to complete profile page on successful sign up
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => BlocProvider.value(
+                value: context.read<AuthBloc>(),
+                child: const CompleteProfilePage(),
+              ),
+            ),
+          );
+        } else if (state is AuthError) {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 const SizedBox(height: 32),
                 // Status bar time (optional, usually handled by system)
                 const SizedBox(height: 8),
@@ -429,67 +454,140 @@ class _AttendeeSignUpPageState extends State<AttendeeSignUpPage> {
                     ),
                     const SizedBox(height: 32),
                     // Create Account button
-                    Material(
-                      color: _agreedToTerms
-                          ? const Color(0xFF1E3A8A)
-                          : Colors.grey,
-                      borderRadius: BorderRadius.circular(8),
-                      child: InkWell(
-                        onTap: _agreedToTerms
-                            ? () {
-                                // TODO: Implement sign up logic
-                                // if (_passwordController.text ==
-                                //     _confirmPasswordController.text) {
-                                //   // Sign up
-                                // }
-                              }
-                            : null,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          decoration: ShapeDecoration(
-                            color: _agreedToTerms
-                                ? const Color(0xFF1E3A8A)
-                                : Colors.grey,
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(
-                                width: 1,
-                                color: _agreedToTerms
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        final isLoading = state is AuthLoading;
+
+                        return Material(
+                          color: (_agreedToTerms && !isLoading)
+                              ? const Color(0xFF1E3A8A)
+                              : Colors.grey,
+                          borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            onTap: (_agreedToTerms && !isLoading)
+                                ? () {
+                                    // Validate inputs
+                                    final email = _emailController.text.trim();
+                                    final password = _passwordController.text;
+                                    final confirmPassword =
+                                        _confirmPasswordController.text;
+
+                                    if (email.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Please enter your email'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    if (password.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content:
+                                              Text('Please enter your password'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    if (password != confirmPassword) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Passwords do not match'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    if (password.length < 6) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Password must be at least 6 characters'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    // Extract display name from email (part before @)
+                                    final displayName = email.split('@').first;
+
+                                    // Trigger sign up
+                                    context.read<AuthBloc>().add(
+                                          SignUpRequested(
+                                            email: email,
+                                            password: password,
+                                            displayName: displayName,
+                                          ),
+                                        );
+                                  }
+                                : null,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              decoration: ShapeDecoration(
+                                color: (_agreedToTerms && !isLoading)
                                     ? const Color(0xFF1E3A8A)
                                     : Colors.grey,
+                                shape: RoundedRectangleBorder(
+                                  side: BorderSide(
+                                    width: 1,
+                                    color: (_agreedToTerms && !isLoading)
+                                        ? const Color(0xFF1E3A8A)
+                                        : Colors.grey,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                shadows: (_agreedToTerms && !isLoading)
+                                    ? const [
+                                        BoxShadow(
+                                          color: Color(0x0C101828),
+                                          blurRadius: 2,
+                                          offset: Offset(0, 1),
+                                          spreadRadius: 0,
+                                        ),
+                                      ]
+                                    : null,
                               ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            shadows: _agreedToTerms
-                                ? const [
-                                    BoxShadow(
-                                      color: Color(0x0C101828),
-                                      blurRadius: 2,
-                                      offset: Offset(0, 1),
-                                      spreadRadius: 0,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Create Account',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w600,
-                                height: 1.50,
+                              child: Center(
+                                child: isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Create Account',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.50,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -536,7 +634,8 @@ class _AttendeeSignUpPageState extends State<AttendeeSignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-              ],
+                ],
+              ),
             ),
           ),
         ),

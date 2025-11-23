@@ -60,8 +60,24 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     required String displayName,
   }) async {
-    // TODO: Implement sign up
-    return const Left(AuthFailure('Sign up not implemented yet'));
+    if (await networkInfo.isConnected) {
+      try {
+        final userModel = await remoteDataSource.signUp(
+          email: email,
+          password: password,
+          displayName: displayName,
+        );
+        return Right(userModel.toEntity());
+      } on AuthException catch (e) {
+        return Left(AuthFailure(e.message));
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } catch (e) {
+        return Left(ServerFailure('Unexpected error: ${e.toString()}'));
+      }
+    } else {
+      return const Left(NetworkFailure('No internet connection'));
+    }
   }
 
   @override

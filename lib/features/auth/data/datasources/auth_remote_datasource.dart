@@ -13,6 +13,13 @@ abstract class AuthRemoteDataSource {
     required String password,
   });
 
+  /// Sign up with email and password.
+  Future<UserModel> signUp({
+    required String email,
+    required String password,
+    required String displayName,
+  });
+
   /// Sign out the current user.
   Future<void> signOut();
 
@@ -53,6 +60,49 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw AuthException(_getAuthErrorMessage(e));
     } catch (e) {
       throw AuthException('Sign in failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<UserModel> signUp({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    try {
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (credential.user == null) {
+        throw AuthException('Sign up failed: No user returned');
+      }
+
+      // Update display name if provided
+      if (displayName.isNotEmpty) {
+        await credential.user!.updateDisplayName(displayName);
+        await credential.user!.reload();
+      }
+
+      // Create user document in Firestore
+      final now = DateTime.now();
+      await _firestore.collection('users').doc(credential.user!.uid).set({
+        'id': credential.user!.uid,
+        'email': email,
+        'displayName': displayName.isNotEmpty ? displayName : null,
+        'photoUrl': null,
+        'roles': const ['attendee'],
+        'organizationId': null,
+        'createdAt': Timestamp.fromDate(now),
+        'updatedAt': null,
+      });
+
+      return await _getUserFromFirebase(credential.user!);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw AuthException(_getAuthErrorMessage(e));
+    } catch (e) {
+      throw AuthException('Sign up failed: ${e.toString()}');
     }
   }
 
