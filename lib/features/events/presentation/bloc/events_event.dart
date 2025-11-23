@@ -12,3 +12,13 @@ abstract class EventsEvent extends Equatable {
 class FetchUpcomingEvents extends EventsEvent {
   const FetchUpcomingEvents();
 }
+
+/// Event to fetch organizer events by organization ID.
+class FetchOrganizerEvents extends EventsEvent {
+  final String orgId;
+
+  const FetchOrganizerEvents(this.orgId);
+
+  @override
+  List<Object?> get props => [orgId];
+}

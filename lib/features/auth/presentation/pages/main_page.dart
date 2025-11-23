@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:leadright/features/auth/presentation/pages/home_page.dart';
 import 'package:leadright/features/auth/presentation/pages/my_attendance_page.dart';
+import 'package:leadright/features/auth/presentation/pages/organizer_home_page.dart';
 import 'package:leadright/features/auth/presentation/pages/profile_page.dart';
 
 /// Main page with bottom navigation bar for Home, My Attendance, and Profile.
@@ -16,11 +17,20 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    MyAttendancePage(),
-    ProfilePage(),
-  ];
+  List<Widget> _buildPages(bool isOrganizer) {
+    if (isOrganizer) {
+      return const [
+        OrganizerHomePage(),
+        MyAttendancePage(),
+        ProfilePage(),
+      ];
+    }
+    return const [
+      HomePage(),
+      MyAttendancePage(),
+      ProfilePage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,13 +48,21 @@ class _MainPageState extends State<MainPage> {
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FB),
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
-        bottomNavigationBar: _buildBottomNavigationBar(),
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, authState) {
+          final isOrganizer = authState is AuthAuthenticated &&
+              authState.user.isOrganizer;
+          final pages = _buildPages(isOrganizer);
+
+          return Scaffold(
+            backgroundColor: const Color(0xFFF8F9FB),
+            body: IndexedStack(
+              index: _currentIndex,
+              children: pages,
+            ),
+            bottomNavigationBar: _buildBottomNavigationBar(),
+          );
+        },
       ),
     );
   }

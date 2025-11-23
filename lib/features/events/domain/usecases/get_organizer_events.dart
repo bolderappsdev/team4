@@ -6,15 +6,16 @@ import '../../../../core/usecases/usecase.dart';
 import '../entities/event.dart';
 import '../repositories/event_repository.dart';
 
-/// Use case for getting upcoming published events.
+/// Use case for getting events by organization ID.
 @injectable
-class GetUpcomingEvents implements StreamUseCase<List<Event>, NoParams> {
+class GetOrganizerEvents implements StreamUseCase<List<Event>, String> {
   final EventRepository repository;
 
-  GetUpcomingEvents(this.repository);
+  GetOrganizerEvents(this.repository);
 
   @override
-  Stream<Either<Failure, List<Event>>> call(NoParams params) {
-    return repository.getUpcomingEvents();
+  Stream<Either<Failure, List<Event>>> call(String orgId) {
+    return repository.getEventsByOrganization(orgId);
   }
 }
+

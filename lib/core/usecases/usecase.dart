@@ -11,6 +11,15 @@ abstract class UseCase<Type, Params> {
   Future<Either<Failure, Type>> call(Params params);
 }
 
+/// Base interface for stream use cases in the application.
+///
+/// A stream use case represents a single business operation that returns
+/// a stream of results. It takes [Params] as input and returns
+/// [Stream<Either<Failure, Type>>].
+abstract class StreamUseCase<Type, Params> {
+  Stream<Either<Failure, Type>> call(Params params);
+}
+
 /// Used for use cases that don't require parameters.
 ///
 /// Example:
