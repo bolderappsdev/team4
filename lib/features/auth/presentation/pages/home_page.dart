@@ -1,10 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:leadright/di/injection_container.dart';
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:leadright/features/events/domain/entities/event.dart';
 import 'package:leadright/features/events/presentation/bloc/events_bloc.dart';
+import 'package:leadright/features/events/presentation/pages/attendee_event_details_page.dart';
 import 'package:leadright/features/events/presentation/widgets/event_card.dart';
 
 /// Home page for attendees displaying upcoming events.
@@ -29,7 +32,7 @@ class _HomePageState extends State<HomePage> {
     _mapController = controller;
   }
 
-  Set<Marker> _buildMarkers(List<Event> events) {
+  Set<Marker> _buildMarkers(BuildContext context, List<Event> events) {
     return events.map((event) {
       return Marker(
         markerId: MarkerId(event.id),
@@ -41,6 +44,9 @@ class _HomePageState extends State<HomePage> {
         icon: BitmapDescriptor.defaultMarkerWithHue(
           BitmapDescriptor.hueBlue,
         ),
+        onTap: () {
+          _showEventBottomSheet(context, event);
+        },
       );
     }).toSet();
   }
@@ -73,10 +79,24 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _showEventBottomSheet(BuildContext context, Event event) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _EventBottomSheet(event: event),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => getIt<EventsBloc>(),
+      create: (context) {
+        final bloc = getIt<EventsBloc>();
+        // Dispatch event to fetch upcoming events when bloc is created
+        bloc.add(const FetchUpcomingEvents());
+        return bloc;
+      },
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
           if (authState is AuthAuthenticated) {
@@ -423,7 +443,7 @@ class _HomePageState extends State<HomePage> {
                                             target: LatLng(centerLat, centerLng),
                                             zoom: 12,
                                           ),
-                                          markers: _buildMarkers(validEvents),
+                                          markers: _buildMarkers(context, validEvents),
                                           mapType: MapType.normal,
                                           myLocationButtonEnabled: false,
                                           zoomControlsEnabled: false,
@@ -506,12 +526,12 @@ class _HomePageState extends State<HomePage> {
                                         return EventCard(
                                           event: event,
                                           onViewDetails: () {
-                                            // TODO: Navigate to event details page
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content:
-                                                    Text('Viewing ${event.title}'),
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    AttendeeEventDetailsPage(
+                                                  event: event,
+                                                ),
                                               ),
                                             );
                                           },
@@ -578,6 +598,422 @@ class _FilterChip extends StatelessWidget {
             Icons.keyboard_arrow_down,
             size: 16,
             color: Color(0xFF667084),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom sheet widget for displaying event details.
+class _EventBottomSheet extends StatelessWidget {
+  final Event event;
+
+  const _EventBottomSheet({required this.event});
+
+  /// Get badge color based on event type.
+  Color _getBadgeColor(String eventType) {
+    switch (eventType.toLowerCase()) {
+      case 'town hall':
+        return const Color(0xFFDBEAFE);
+      case 'forum':
+        return const Color(0xFFFFEDD4);
+      case 'debate':
+        return const Color(0xFFF3E8FF);
+      default:
+        return const Color(0xFFDBEAFE);
+    }
+  }
+
+  /// Get badge border color based on event type.
+  Color _getBadgeBorderColor(String eventType) {
+    switch (eventType.toLowerCase()) {
+      case 'town hall':
+        return const Color(0xFFBDDAFF);
+      case 'forum':
+        return const Color(0xFFFFD6A7);
+      case 'debate':
+        return const Color(0xFFE9D4FF);
+      default:
+        return const Color(0xFFBDDAFF);
+    }
+  }
+
+  /// Get badge text color based on event type.
+  Color _getBadgeTextColor(String eventType) {
+    switch (eventType.toLowerCase()) {
+      case 'town hall':
+        return const Color(0xFF193BB8);
+      case 'forum':
+        return const Color(0xFF9F2D00);
+      case 'debate':
+        return const Color(0xFF6D10B0);
+      default:
+        return const Color(0xFF193BB8);
+    }
+  }
+
+  /// Get image URL for event.
+  String _getImageUrl() {
+    if (event.imagePath != null && event.imagePath!.isNotEmpty) {
+      // TODO: Get from Firebase Storage URL
+      // For now, return placeholder
+      return 'https://placehold.co/341x192';
+    }
+    return 'https://placehold.co/341x192';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final eventType = event.eventType;
+    final dateFormat = DateFormat('MMM dd, yyyy');
+    final timeFormat = DateFormat('h:mm a');
+    final startTime = timeFormat.format(event.startAt);
+    final endTime = timeFormat.format(event.endAt);
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final contentWidth = screenWidth > 375 ? 359.0 : screenWidth - 16;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(
+        top: 16,
+        left: 8,
+        right: 8,
+        bottom: 32,
+      ),
+      clipBehavior: Clip.antiAlias,
+      decoration: const ShapeDecoration(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            topRight: Radius.circular(32),
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: double.infinity,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 50,
+                  height: 4,
+                  decoration: ShapeDecoration(
+                    color: const Color(0xFFEAECF0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(55),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: contentWidth,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: ShapeDecoration(
+                    shape: RoundedRectangleBorder(
+                      side: const BorderSide(
+                        width: 1,
+                        color: Color(0xFFCFD4DC),
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 192,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: const BoxDecoration(),
+                        child: Stack(
+                          children: [
+                            CachedNetworkImage(
+                              imageUrl: _getImageUrl(),
+                              width: double.infinity,
+                              height: 192,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: const Color(0xFFF6F6F6),
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: const Color(0xFFF6F6F6),
+                                child: const Icon(Icons.error),
+                              ),
+                            ),
+                            Positioned(
+                              left: 10,
+                              top: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                decoration: ShapeDecoration(
+                                  color: _getBadgeColor(eventType),
+                                  shape: RoundedRectangleBorder(
+                                    side: BorderSide(
+                                      width: 1,
+                                      color: _getBadgeBorderColor(eventType),
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  eventType,
+                                  style: TextStyle(
+                                    color: _getBadgeTextColor(eventType),
+                                    fontSize: 12,
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.33,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    event.title,
+                                    style: const TextStyle(
+                                      color: Color(0xFF0A0A0A),
+                                      fontSize: 16,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.50,
+                                      letterSpacing: -0.31,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Date
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        clipBehavior: Clip.antiAlias,
+                                        decoration: const BoxDecoration(),
+                                        child: const Icon(
+                                          Icons.calendar_today,
+                                          size: 16,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        dateFormat.format(event.startAt),
+                                        style: const TextStyle(
+                                          color: Color(0xFF6B7280),
+                                          fontSize: 14,
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w400,
+                                          height: 1.43,
+                                          letterSpacing: -0.15,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Time
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        clipBehavior: Clip.antiAlias,
+                                        decoration: const BoxDecoration(),
+                                        child: const Icon(
+                                          Icons.access_time,
+                                          size: 16,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '$startTime - $endTime',
+                                        style: const TextStyle(
+                                          color: Color(0xFF6B7280),
+                                          fontSize: 14,
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w400,
+                                          height: 1.43,
+                                          letterSpacing: -0.15,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Organizer
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        clipBehavior: Clip.antiAlias,
+                                        decoration: const BoxDecoration(),
+                                        child: const Icon(
+                                          Icons.person,
+                                          size: 16,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Organizer',
+                                        style: const TextStyle(
+                                          color: Color(0xFF6B7280),
+                                          fontSize: 14,
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w400,
+                                          height: 1.43,
+                                          letterSpacing: -0.15,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Location
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        clipBehavior: Clip.antiAlias,
+                                        decoration: const BoxDecoration(),
+                                        child: const Icon(
+                                          Icons.location_on,
+                                          size: 16,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          event.location.address,
+                                          style: const TextStyle(
+                                            color: Color(0xFF6B7280),
+                                            fontSize: 14,
+                                            fontFamily: 'Inter',
+                                            fontWeight: FontWeight.w400,
+                                            height: 1.43,
+                                            letterSpacing: -0.15,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              height: 36,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFFDC2626),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          AttendeeEventDetailsPage(
+                                        event: event,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'View Details',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontFamily: 'Inter',
+                                        fontWeight: FontWeight.w500,
+                                        height: 1.43,
+                                        letterSpacing: -0.15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

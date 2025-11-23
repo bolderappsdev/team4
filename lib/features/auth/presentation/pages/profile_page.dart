@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:leadright/di/injection_container.dart';
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:leadright/features/events/domain/entities/event.dart';
-import 'package:leadright/features/events/domain/repositories/event_repository.dart';
-import 'package:leadright/core/utils/constants.dart';
+import 'package:leadright/features/auth/presentation/pages/my_attendance_page.dart';
 
 /// Profile page showing user information and settings.
 class ProfilePage extends StatelessWidget {
@@ -14,130 +11,181 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
-      body: SafeArea(
-        child: BlocBuilder<AuthBloc, AuthState>(
+      body: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             if (state is AuthAuthenticated) {
-              return SingleChildScrollView(
+            return Stack(
+              children: [
+                // Main content
+                Positioned(
+                  left: 0,
+                  top: 0,
                 child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                    width: MediaQuery.of(context).size.width,
+                    padding: const EdgeInsets.only(
+                      top: 56,
+                      left: 16,
+                      right: 16,
+                      bottom: 12,
+                    ),
+                    decoration: const BoxDecoration(color: Colors.white),
                   child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
-                      const Text(
-                        'Profile',
-                        style: TextStyle(
-                          color: Color(0xFF0F1728),
-                          fontSize: 24,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      // Profile Card
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: ShapeDecoration(
-                          color: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Column(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Avatar
                             Container(
-                              width: 64,
-                              height: 64,
-                              decoration: const ShapeDecoration(
-                                color: Color(0xFF1E3A8A),
-                                shape: CircleBorder(),
-                              ),
-                              child: Center(
+                                width: 48,
+                                height: 48,
+                                decoration: ShapeDecoration(
+                                  image: state.user.photoUrl != null
+                                      ? DecorationImage(
+                                          image: NetworkImage(state.user.photoUrl!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                                  color: state.user.photoUrl == null
+                                      ? const Color(0xFF1E3A8A)
+                                      : null,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(200),
+                                  ),
+                                ),
+                                child: state.user.photoUrl == null
+                                    ? Center(
                                 child: Text(
                                   state.user.displayName?.isNotEmpty == true
                                       ? state.user.displayName![0].toUpperCase()
                                       : state.user.email[0].toUpperCase(),
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 24,
+                                            fontSize: 20,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                                      )
+                                    : null,
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            // Name
-                            Text(
+                              const SizedBox(width: 12),
+                              // Name and Email
+                              Expanded(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: Text(
                               state.user.displayName ?? 'User',
                               style: const TextStyle(
                                 color: Color(0xFF0F1728),
                                 fontSize: 20,
                                 fontFamily: 'Inter',
                                 fontWeight: FontWeight.w600,
+                                                height: 1.20,
+                                              ),
                               ),
                             ),
                             const SizedBox(height: 4),
-                            // Email
-                            Text(
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: Text(
                               state.user.email,
                               style: const TextStyle(
-                                color: Color(0xFF667084),
-                                fontSize: 14,
-                                fontFamily: 'Quicksand',
+                                                color: Color(0xFF475466),
+                                                fontSize: 16,
+                                                fontFamily: 'Inter',
                                 fontWeight: FontWeight.w400,
+                                                height: 1.25,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      // Settings Section
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Settings Menu
+                Positioned(
+                  left: 16,
+                  top: 132,
+                  child: Container(
+                    width: MediaQuery.of(context).size.width - 32,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: ShapeDecoration(
                           color: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      shadows: const [
+                        BoxShadow(
+                          color: Color(0x3DE4E5E7),
+                          blurRadius: 2,
+                          offset: Offset(0, 1),
+                          spreadRadius: 0,
+                        )
+                      ],
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Text(
-                              'Settings',
-                              style: TextStyle(
-                                color: Color(0xFF0F1728),
-                                fontSize: 18,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w600,
+                        // Personal Information
+                        _SettingsMenuItem(
+                          icon: Icons.person_outline,
+                          title: 'Personal Information',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Personal Information - Coming soon'),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            // Placeholder settings items
-                            _SettingsItem(
-                              icon: Icons.person_outline,
-                              title: 'Edit Profile',
+                            );
+                          },
+                        ),
+                        const Divider(height: 1, color: Color(0xFFF2F3F6)),
+                        // My Events
+                        _SettingsMenuItem(
+                          icon: Icons.event,
+                          title: 'My Events',
                               onTap: () {
-                                // TODO: Navigate to edit profile page
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Edit Profile - Coming soon'),
+                            // Navigate to My Attendance page
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const MyAttendancePage(),
                                   ),
                                 );
                               },
                             ),
-                            const Divider(height: 1),
-                            _SettingsItem(
+                        const Divider(height: 1, color: Color(0xFFF2F3F6)),
+                        // Notifications
+                        _SettingsMenuItem(
                               icon: Icons.notifications_outlined,
                               title: 'Notifications',
                               onTap: () {
-                                // TODO: Navigate to notifications settings
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Notifications - Coming soon'),
@@ -145,15 +193,63 @@ class ProfilePage extends StatelessWidget {
                                 );
                               },
                             ),
-                            const Divider(height: 1),
-                            _SettingsItem(
-                              icon: Icons.security_outlined,
-                              title: 'Privacy & Security',
+                        const Divider(height: 1, color: Color(0xFFF2F3F6)),
+                        // Terms of Use
+                        _SettingsMenuItem(
+                          icon: Icons.description_outlined,
+                          title: 'Terms of Use',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Terms of Use - Coming soon'),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(height: 1, color: Color(0xFFF2F3F6)),
+                        // Privacy Policy
+                        _SettingsMenuItem(
+                          icon: Icons.privacy_tip_outlined,
+                          title: 'Privacy Policy',
                               onTap: () {
-                                // TODO: Navigate to privacy settings
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Privacy & Security - Coming soon'),
+                                content: Text('Privacy Policy - Coming soon'),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        // Logout
+                        _SettingsMenuItem(
+                          icon: Icons.logout,
+                          title: 'Logout',
+                          iconColor: const Color(0xFFF97066),
+                          titleColor: const Color(0xFFF97066),
+                          backgroundColor: const Color(0xFFFEF2F1),
+                          onTap: () {
+                            // Show confirmation dialog
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Logout'),
+                                content: const Text('Are you sure you want to logout?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      context.read<AuthBloc>().add(const SignOutRequested());
+                                    },
+                                    child: const Text(
+                                      'Logout',
+                                      style: TextStyle(color: Color(0xFFDC2626)),
+                                    ),
+                                  ),
+                                ],
                                   ),
                                 );
                               },
@@ -161,84 +257,175 @@ class ProfilePage extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      // Test Button - Add Sample Events
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                ),
+                // Bottom Navigation Bar
+                Positioned(
+                  left: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: 96,
                         decoration: ShapeDecoration(
                           color: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                        side: const BorderSide(
+                          width: 0.50,
+                          strokeAlign: BorderSide.strokeAlignCenter,
+                          color: Color(0xFFF2F3F6),
                         ),
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Home Tab
+                                Expanded(
+                                  child: Container(
+                                    height: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          child: const Icon(
+                                            Icons.home,
+                                            size: 24,
+                                            color: Color(0xFF667084),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
                             const Text(
-                              'Developer Tools',
+                                          'Home',
+                                          textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Color(0xFF0F1728),
-                                fontSize: 18,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () => _addSampleEvents(context, state.user.id),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E3A8A),
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                            color: Color(0xFF667084),
+                                            fontSize: 12,
+                                            fontFamily: 'SF Pro Display',
+                                            fontWeight: FontWeight.w400,
+                                            height: 1.33,
+                                            letterSpacing: -0.08,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                child: const Text(
-                                  'Add Sample Events',
+                                // My Events Tab
+                                Expanded(
+                                  child: Container(
+                                    height: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 6),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          child: const Icon(
+                                            Icons.event_available,
+                                            size: 24,
+                                            color: Color(0xFF667084),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        const Text(
+                                          'My Events',
+                                          textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w600,
+                                            color: Color(0xFF667084),
+                                            fontSize: 12,
+                                            fontFamily: 'SF Pro Display',
+                                            fontWeight: FontWeight.w400,
+                                            height: 1.33,
+                                            letterSpacing: -0.08,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
+                                // Profile Tab (Active)
+                                Expanded(
+                                  child: Container(
+                                    height: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 6),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          child: const Icon(
+                                            Icons.person,
+                                            size: 24,
+                                            color: Color(0xFFDC2626),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        const Text(
+                                          'Profile',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Color(0xFFDC2626),
+                                            fontSize: 12,
+                                            fontFamily: 'SF Pro Display',
+                                            fontWeight: FontWeight.w400,
+                                            height: 1.33,
+                                            letterSpacing: -0.08,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      // Logout Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            context.read<AuthBloc>().add(const SignOutRequested());
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFDC2626),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'Log Out',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w600,
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        // Safe area spacer
+                        Container(
+                          width: double.infinity,
+                          height: 34,
+                          child: const SizedBox(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+                // Status Bar (Time)
+                Positioned(
+                  left: 24,
+                  top: 16,
+                  child: Text(
+                    _getCurrentTime(),
+                    style: const TextStyle(
+                      color: Color(0xFF0F1728),
+                      fontSize: 16,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ],
               );
             }
 
@@ -246,280 +433,97 @@ class ProfilePage extends StatelessWidget {
               child: CircularProgressIndicator(),
             );
           },
-        ),
       ),
     );
   }
 
-  /// Add sample events to the database for testing purposes.
-  static Future<void> _addSampleEvents(BuildContext context, String userId) async {
-    try {
-      final eventRepository = getIt<EventRepository>();
+  String _getCurrentTime() {
       final now = DateTime.now();
-      
-      // Use userId as orgId for test events, or use a test org ID
-      final testOrgId = 'test_org_$userId';
-
-      // Sample events with different dates
-      final sampleEvents = [
-        Event(
-          id: '', // Will be generated by Firestore
-          orgId: testOrgId,
-          title: 'Town Hall Meeting - Community Discussion',
-          description: 'Join us for an open town hall meeting where we discuss important community issues and gather feedback from residents. This is your opportunity to voice your concerns and ideas.',
-          startAt: now.add(const Duration(days: 7)),
-          endAt: now.add(const Duration(days: 7, hours: 2)),
-          location: const EventLocation(
-            lat: 40.7128,
-            lng: -74.0060,
-            address: '123 Main Street, New York, NY 10001',
-          ),
-          capacity: 200,
-          ticketTypes: [
-            TicketType(
-              id: 'general',
-              title: 'General Admission',
-              priceCents: 0,
-              quantity: 200,
-              salesStart: now,
-              salesEnd: now.add(const Duration(days: 6)),
-            ),
-          ],
-          status: AppConstants.eventStatusPublished,
-          createdAt: now,
-          updatedAt: null,
-        ),
-        Event(
-          id: '',
-          orgId: testOrgId,
-          title: 'Political Rally - Support Our Cause',
-          description: 'A rally to show support for our political movement. Come together with like-minded individuals to make your voice heard.',
-          startAt: now.add(const Duration(days: 14)),
-          endAt: now.add(const Duration(days: 14, hours: 3)),
-          location: const EventLocation(
-            lat: 34.0522,
-            lng: -118.2437,
-            address: '456 Park Avenue, Los Angeles, CA 90001',
-          ),
-          capacity: 500,
-          ticketTypes: [
-            TicketType(
-              id: 'standard',
-              title: 'Standard Ticket',
-              priceCents: 2500, // $25.00
-              quantity: 400,
-              salesStart: now,
-              salesEnd: now.add(const Duration(days: 13)),
-            ),
-            TicketType(
-              id: 'vip',
-              title: 'VIP Ticket',
-              priceCents: 5000, // $50.00
-              quantity: 100,
-              salesStart: now,
-              salesEnd: now.add(const Duration(days: 13)),
-            ),
-          ],
-          status: AppConstants.eventStatusPublished,
-          createdAt: now,
-          updatedAt: null,
-        ),
-        Event(
-          id: '',
-          orgId: testOrgId,
-          title: 'Debate Forum - Policy Discussion',
-          description: 'An engaging debate forum where candidates discuss key policy issues. This is a great opportunity to learn about different perspectives on important topics.',
-          startAt: now.add(const Duration(days: 21)),
-          endAt: now.add(const Duration(days: 21, hours: 2, minutes: 30)),
-          location: const EventLocation(
-            lat: 41.8781,
-            lng: -87.6298,
-            address: '789 State Street, Chicago, IL 60601',
-          ),
-          capacity: 300,
-          ticketTypes: [
-            TicketType(
-              id: 'student',
-              title: 'Student Ticket',
-              priceCents: 1000, // $10.00
-              quantity: 100,
-              salesStart: now,
-              salesEnd: now.add(const Duration(days: 20)),
-            ),
-            TicketType(
-              id: 'adult',
-              title: 'Adult Ticket',
-              priceCents: 2000, // $20.00
-              quantity: 200,
-              salesStart: now,
-              salesEnd: now.add(const Duration(days: 20)),
-            ),
-          ],
-          status: AppConstants.eventStatusPublished,
-          createdAt: now,
-          updatedAt: null,
-        ),
-        Event(
-          id: '',
-          orgId: testOrgId,
-          title: 'Community Forum - Local Issues',
-          description: 'A community forum focused on local issues affecting our neighborhood. We welcome all residents to participate in this important discussion.',
-          startAt: now.add(const Duration(days: 30)),
-          endAt: now.add(const Duration(days: 30, hours: 2)),
-          location: const EventLocation(
-            lat: 29.7604,
-            lng: -95.3698,
-            address: '321 Commerce Street, Houston, TX 77002',
-          ),
-          capacity: 150,
-          ticketTypes: [
-            TicketType(
-              id: 'free',
-              title: 'Free Admission',
-              priceCents: 0,
-              quantity: 150,
-              salesStart: now,
-              salesEnd: now.add(const Duration(days: 29)),
-            ),
-          ],
-          status: AppConstants.eventStatusPublished,
-          createdAt: now,
-          updatedAt: null,
-        ),
-        Event(
-          id: '',
-          orgId: testOrgId,
-          title: 'Campaign Event - Meet the Candidate',
-          description: 'Join us for an exclusive meet and greet with our candidate. This is a great opportunity to ask questions and learn more about our platform.',
-          startAt: now.add(const Duration(days: 45)),
-          endAt: now.add(const Duration(days: 45, hours: 1, minutes: 30)),
-          location: const EventLocation(
-            lat: 33.4484,
-            lng: -112.0740,
-            address: '555 Central Avenue, Phoenix, AZ 85004',
-          ),
-          capacity: 100,
-          ticketTypes: [
-            TicketType(
-              id: 'early_bird',
-              title: 'Early Bird',
-              priceCents: 1500, // $15.00
-              quantity: 50,
-              salesStart: now,
-              salesEnd: now.add(const Duration(days: 30)),
-            ),
-            TicketType(
-              id: 'regular',
-              title: 'Regular',
-              priceCents: 2000, // $20.00
-              quantity: 50,
-              salesStart: now.add(const Duration(days: 30)),
-              salesEnd: now.add(const Duration(days: 44)),
-            ),
-          ],
-          status: AppConstants.eventStatusPublished,
-          createdAt: now,
-          updatedAt: null,
-        ),
-      ];
-
-      // Show loading indicator
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
-      }
-
-      int successCount = 0;
-      for (final event in sampleEvents) {
-        final result = await eventRepository.createEvent(event);
-        result.fold(
-          (failure) {
-            // Error creating event
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to create event: ${event.title}'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          (createdEvent) {
-            successCount++;
-          },
-        );
-      }
-
-      // Hide loading indicator
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully created $successCount sample events!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error adding sample events: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    }
+    final hour = now.hour.toString().padLeft(2, '0');
+    final minute = now.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 }
 
-class _SettingsItem extends StatelessWidget {
+class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
+  final Color? iconColor;
+  final Color? titleColor;
+  final Color? backgroundColor;
 
-  const _SettingsItem({
+  const _SettingsMenuItem({
     required this.icon,
     required this.title,
     required this.onTap,
+    this.iconColor,
+    this.titleColor,
+    this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final defaultIconColor = iconColor ?? const Color(0xFF667084);
+    final defaultTitleColor = titleColor ?? const Color(0xFF0F1728);
+    final defaultBackgroundColor = backgroundColor ?? const Color(0xFFE8EBF3);
+
     return InkWell(
       onTap: onTap,
-      child: Padding(
+      child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: ShapeDecoration(
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(
+              width: 1,
+              color: Color(0xFFF2F3F6),
+            ),
+          ),
+        ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  padding: const EdgeInsets.all(4),
+                  decoration: ShapeDecoration(
+                    color: defaultBackgroundColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                  ),
+                  child: Icon(
               icon,
-              color: const Color(0xFF667084),
-              size: 24,
+                    size: 20,
+                    color: defaultIconColor,
+                  ),
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text(
+                Text(
                 title,
-                style: const TextStyle(
-                  color: Color(0xFF0F1728),
+                  style: TextStyle(
+                    color: defaultTitleColor,
                   fontSize: 16,
                   fontFamily: 'Inter',
-                  fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
+                    height: 1.50,
+                  ),
                 ),
-              ),
+              ],
             ),
             const Icon(
               Icons.chevron_right,
+              size: 16,
               color: Color(0xFF667084),
-              size: 20,
             ),
           ],
         ),
@@ -527,4 +531,3 @@ class _SettingsItem extends StatelessWidget {
     );
   }
 }
-

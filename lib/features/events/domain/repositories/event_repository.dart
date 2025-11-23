@@ -19,4 +19,7 @@ abstract class EventRepository {
 
   /// Create a new event.
   Future<Either<Failure, Event>> createEvent(Event event);
+
+  /// Get events that a user is attending (via tickets).
+  Stream<Either<Failure, List<Event>>> getEventsByUserAttendance(String userId);
 }

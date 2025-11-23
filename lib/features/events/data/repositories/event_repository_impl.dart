@@ -125,4 +125,37 @@ class EventRepositoryImpl implements EventRepository {
       return Left(ServerFailure('Unexpected error: ${e.toString()}'));
     }
   }
+
+  @override
+  Stream<Either<Failure, List<Event>>> getEventsByUserAttendance(String userId) {
+    return remoteDataSource.getEventsByUserAttendance(userId).transform(
+      StreamTransformer<List<EventModel>, Either<Failure, List<Event>>>.fromHandlers(
+        handleData: (eventModels, sink) {
+          try {
+            final events = eventModels.map((model) => model.toEntity()).toList();
+            sink.add(Right(events));
+          } catch (e) {
+            sink.add(
+              Left<Failure, List<Event>>(
+                ServerFailure('Failed to parse events: ${e.toString()}'),
+              ),
+            );
+          }
+        },
+        handleError: (error, stackTrace, sink) {
+          if (error is ServerException) {
+            sink.add(Left<Failure, List<Event>>(ServerFailure(error.message)));
+          } else if (error is NetworkException) {
+            sink.add(Left<Failure, List<Event>>(NetworkFailure(error.message)));
+          } else {
+            sink.add(
+              Left<Failure, List<Event>>(
+                ServerFailure('Unexpected error: ${error.toString()}'),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
 }

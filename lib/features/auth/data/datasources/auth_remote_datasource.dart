@@ -236,6 +236,45 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw AuthException('No user is currently signed in');
       }
 
+      // Get current user data to check if organizer and has organizationId
+      final currentUserDoc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      final currentUserData = currentUserDoc.exists ? currentUserDoc.data()! : {};
+      final currentRoles = List<String>.from(currentUserData['roles'] ?? ['attendee']);
+      final isOrganizer = currentRoles.contains('organizer');
+      final currentOrganizationId = currentUserData['organizationId'] as String?;
+      
+      // If organizer doesn't have organizationId, create organization
+      String? organizationId = currentOrganizationId;
+      if (isOrganizer && (organizationId == null || organizationId.isEmpty)) {
+        // Get organization name from displayName or current displayName
+        final orgName = displayName?.isNotEmpty == true 
+            ? displayName 
+            : (currentUserData['displayName'] as String?) ?? user.displayName ?? 'My Organization';
+        
+        // Create organization document
+        final orgRef = _firestore.collection('organizations').doc();
+        final now = DateTime.now();
+        await orgRef.set({
+          'id': orgRef.id,
+          'name': orgName,
+          'ownerId': user.uid,
+          'stripeAccountId': null,
+          'tier': 'free',
+          'billingEmail': contactEmail?.isNotEmpty == true 
+              ? contactEmail 
+              : (currentUserData['contactEmail'] as String?) ?? user.email,
+          'status': 'pending', // Pending admin approval
+          'createdAt': Timestamp.fromDate(now),
+          'updatedAt': null,
+        });
+        
+        organizationId = orgRef.id;
+      }
+
       // Update Firebase Auth display name if provided
       if (displayName != null && displayName.isNotEmpty) {
         await user.updateDisplayName(displayName);
@@ -246,6 +285,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final updateData = <String, dynamic>{
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
+      
+      // Add organizationId to update data if it was created
+      if (organizationId != null && organizationId.isNotEmpty) {
+        updateData['organizationId'] = organizationId;
+      }
 
       if (displayName != null) {
         updateData['displayName'] = displayName.isEmpty ? null : displayName;

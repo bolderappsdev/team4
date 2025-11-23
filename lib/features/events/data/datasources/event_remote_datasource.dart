@@ -18,6 +18,9 @@ abstract class EventRemoteDataSource {
 
   /// Create a new event.
   Future<EventModel> createEvent(EventModel event);
+
+  /// Get events that a user is attending (via tickets).
+  Stream<List<EventModel>> getEventsByUserAttendance(String userId);
 }
 
 @LazySingleton(as: EventRemoteDataSource)
@@ -102,6 +105,58 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
       return EventModel.fromFirestore(doc);
     } catch (e) {
       throw ServerException('Failed to create event: ${e.toString()}');
+    }
+  }
+
+  @override
+  Stream<List<EventModel>> getEventsByUserAttendance(String userId) {
+    try {
+      // First, get all tickets for the user
+      return _firestore
+          .collection(AppConstants.ticketsCollection)
+          .where('ownerUserId', isEqualTo: userId)
+          .snapshots()
+          .asyncMap((ticketsSnapshot) async {
+        if (ticketsSnapshot.docs.isEmpty) {
+          return <EventModel>[];
+        }
+
+        // Get unique event IDs from tickets
+        final eventIds = ticketsSnapshot.docs
+            .map((doc) => doc.data()['eventId'] as String?)
+            .where((id) => id != null)
+            .toSet()
+            .toList();
+
+        if (eventIds.isEmpty) {
+          return <EventModel>[];
+        }
+
+        // Fetch events for these event IDs
+        // Note: Firestore 'in' query limit is 10, so we batch if needed
+        final events = <EventModel>[];
+        for (var i = 0; i < eventIds.length; i += 10) {
+          final batch = eventIds.skip(i).take(10).toList();
+          final eventsSnapshot = await _firestore
+              .collection(AppConstants.eventsCollection)
+              .where(FieldPath.documentId, whereIn: batch)
+              .get();
+          
+          events.addAll(
+            eventsSnapshot.docs
+                .map((doc) => EventModel.fromFirestore(doc))
+                .toList(),
+          );
+        }
+
+        // Sort by start date
+        events.sort((a, b) => a.startAt.compareTo(b.startAt));
+        
+        return events;
+      });
+    } catch (e) {
+      throw ServerException(
+          'Failed to fetch user attendance events: ${e.toString()}');
     }
   }
 }

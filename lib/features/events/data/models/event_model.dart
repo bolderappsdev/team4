@@ -38,6 +38,9 @@ class EventModel {
   final String? imagePath;
   final String status;
 
+  @JsonKey(fromJson: _agendaFromJson, toJson: _agendaToJson)
+  final List<String>? agenda;
+
   @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
   final DateTime createdAt;
 
@@ -57,6 +60,7 @@ class EventModel {
     required this.ticketTypes,
     this.imagePath,
     required this.status,
+    this.agenda,
     required this.createdAt,
     this.updatedAt,
   });
@@ -93,6 +97,7 @@ class EventModel {
       ticketTypes: event.ticketTypes,
       imagePath: event.imagePath,
       status: event.status,
+      agenda: event.agenda,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     );
@@ -112,6 +117,7 @@ class EventModel {
       ticketTypes: ticketTypes,
       imagePath: imagePath,
       status: status,
+      agenda: agenda,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -217,5 +223,17 @@ class EventModel {
             : null,
       };
     }).toList();
+  }
+
+  /// Helper to convert agenda from JSON.
+  static List<String>? _agendaFromJson(dynamic json) {
+    if (json == null) return null;
+    if (json is! List) return null;
+    return json.map((item) => item.toString()).toList();
+  }
+
+  /// Helper to convert agenda to JSON.
+  static List<String>? _agendaToJson(List<String>? agenda) {
+    return agenda;
   }
 }

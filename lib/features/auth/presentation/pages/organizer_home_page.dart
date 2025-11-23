@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:leadright/di/injection_container.dart';
+import 'package:leadright/features/auth/domain/entities/user.dart';
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:leadright/features/events/domain/entities/event.dart';
 import 'package:leadright/features/events/presentation/bloc/events_bloc.dart';
@@ -20,11 +23,66 @@ class _OrganizerHomePageState extends State<OrganizerHomePage> {
   String _selectedFilter = 'Upcoming';
   String _selectedStatusFilter = 'All Statuses';
   String? _lastFetchedOrgId;
+  bool _isCreatingOrganization = false;
 
   void _fetchEventsIfNeeded(String orgId, BuildContext context) {
     if (orgId != _lastFetchedOrgId) {
       _lastFetchedOrgId = orgId;
       context.read<EventsBloc>().add(FetchOrganizerEvents(orgId));
+    }
+  }
+
+  /// Create organization if profile is complete but organizationId is missing
+  Future<void> _createOrganizationIfNeeded(BuildContext context, User user) async {
+    if (_isCreatingOrganization) return;
+    
+    try {
+      final firestore = getIt<FirebaseFirestore>();
+      final firebaseAuth = firebase_auth.FirebaseAuth.instance;
+      final currentUser = firebaseAuth.currentUser;
+      
+      if (currentUser == null) return;
+      
+      // Get user document from Firestore
+      final userDoc = await firestore.collection('users').doc(currentUser.uid).get();
+      if (!userDoc.exists) return;
+      
+      final userData = userDoc.data()!;
+      final displayName = userData['displayName'] as String?;
+      final bio = userData['bio'] as String?;
+      final contactEmail = userData['contactEmail'] as String?;
+      
+      // Check if profile is complete (has displayName, bio, contactEmail)
+      final isProfileComplete = displayName != null && 
+          displayName.isNotEmpty &&
+          bio != null && 
+          bio.isNotEmpty &&
+          contactEmail != null && 
+          contactEmail.isNotEmpty;
+      
+      // If profile is complete but no organizationId, trigger profile update
+      // which will now create the organization
+      if (isProfileComplete && (user.organizationId == null || user.organizationId!.isEmpty)) {
+        setState(() {
+          _isCreatingOrganization = true;
+        });
+        
+        // Trigger profile update with existing data to create organization
+        context.read<AuthBloc>().add(
+          UpdateProfileRequested(
+            displayName: displayName,
+            bio: bio,
+            contactEmail: contactEmail,
+            website: userData['website'] as String?,
+            photoUrl: userData['photoUrl'] as String?,
+          ),
+        );
+      }
+    } catch (e) {
+      // Silently fail - user can manually update profile
+      setState(() {
+        _isCreatingOrganization = false;
+      });
     }
   }
 
@@ -38,6 +96,19 @@ class _OrganizerHomePageState extends State<OrganizerHomePage> {
             final orgId = authState.user.organizationId;
             if (orgId != null && orgId.isNotEmpty) {
               _fetchEventsIfNeeded(orgId, context);
+              // Reset creating flag if organization is now set
+              if (_isCreatingOrganization) {
+                setState(() {
+                  _isCreatingOrganization = false;
+                });
+              }
+            }
+          } else if (authState is AuthError) {
+            // Reset creating flag on error
+            if (_isCreatingOrganization) {
+              setState(() {
+                _isCreatingOrganization = false;
+              });
             }
           }
         },
@@ -47,7 +118,22 @@ class _OrganizerHomePageState extends State<OrganizerHomePage> {
               final user = authState.user;
               final orgId = user.organizationId;
 
+              // Check if we need to create organization for complete profile
               if (orgId == null || orgId.isEmpty) {
+                // Try to create organization if profile is complete
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _createOrganizationIfNeeded(context, user);
+                });
+                
+                // Show loading or message while creating organization
+                if (_isCreatingOrganization) {
+                  return const Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                
                 return const Scaffold(
                   body: Center(
                     child: Text('No organization found. Please complete your profile.'),

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:leadright/features/auth/presentation/pages/home_page.dart';
+import 'package:leadright/features/auth/presentation/pages/main_page.dart';
 
 /// Page shown after user verifies their account via email link.
 /// Prompts user to allow location access and navigates to home when granted.
@@ -42,12 +42,12 @@ class _AccountVerifiedPageState extends State<AccountVerifiedPage> {
 
       if (mounted) {
         if (status.isGranted) {
-          // Navigate to home page when permission is granted
+          // Navigate to main page when permission is granted
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => BlocProvider.value(
                 value: context.read<AuthBloc>(),
-                child: const HomePage(),
+                child: const MainPage(),
               ),
             ),
           );

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +8,7 @@ import 'package:leadright/features/auth/domain/usecases/is_profile_complete.dart
 import 'package:leadright/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:leadright/features/auth/presentation/pages/complete_profile_page.dart';
 import 'package:leadright/features/auth/presentation/pages/main_page.dart';
+import 'package:leadright/features/auth/presentation/pages/organizer_profile_setup_page.dart';
 import 'package:leadright/features/auth/presentation/pages/select_user_type_page.dart';
 
 /// Sign in page where users can log in with their email and password.
@@ -43,25 +45,43 @@ class _SignInPageState extends State<SignInPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) async {
         if (state is AuthAuthenticated) {
-          // Check if profile is complete
-          final isProfileComplete = getIt<IsProfileComplete>();
-          final profileResult = await isProfileComplete(NoParams());
-          
-          profileResult.fold(
-            (failure) {
-              // If check fails, navigate to home page (default behavior)
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => BlocProvider.value(
-                    value: context.read<AuthBloc>(),
-                    child: const MainPage(),
+          final user = state.user;
+          final isOrganizer = user.isOrganizer;
+
+          if (isOrganizer) {
+            // For organizers, check if profile is complete by checking displayName, bio, and contactEmail
+            try {
+              final firestore = getIt<FirebaseFirestore>();
+              final userDoc = await firestore
+                  .collection('users')
+                  .doc(user.id)
+                  .get();
+
+              if (!userDoc.exists) {
+                // User document doesn't exist, navigate to profile setup
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => BlocProvider.value(
+                      value: context.read<AuthBloc>(),
+                      child: const OrganizerProfileSetupPage(),
+                    ),
                   ),
-                ),
-              );
-            },
-            (isComplete) {
-              if (isComplete) {
-                // Profile is complete, navigate to home page
+                );
+                return;
+              }
+
+              final data = userDoc.data()!;
+              final displayName = data['displayName'] as String?;
+              final bio = data['bio'] as String?;
+              final contactEmail = data['contactEmail'] as String?;
+
+              // Check if all required fields are present and non-empty
+              final isProfileComplete = (displayName != null && displayName.trim().isNotEmpty) &&
+                                      (bio != null && bio.trim().isNotEmpty) &&
+                                      (contactEmail != null && contactEmail.trim().isNotEmpty);
+
+              if (isProfileComplete) {
+                // Organizer profile is complete, navigate to main page
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
                     builder: (context) => BlocProvider.value(
@@ -71,18 +91,69 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 );
               } else {
-                // Profile is incomplete, navigate to complete profile page
+                // Organizer profile is incomplete, navigate to organizer profile setup page
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
                     builder: (context) => BlocProvider.value(
                       value: context.read<AuthBloc>(),
-                      child: const CompleteProfilePage(),
+                      child: const OrganizerProfileSetupPage(),
                     ),
                   ),
                 );
               }
-            },
-          );
+            } catch (e) {
+              // If there's an error fetching user data, navigate to profile setup
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => BlocProvider.value(
+                    value: context.read<AuthBloc>(),
+                    child: const OrganizerProfileSetupPage(),
+                  ),
+                ),
+              );
+            }
+          } else {
+            // For attendees, check if profile is complete using the use case
+            final isProfileCompleteUseCase = getIt<IsProfileComplete>();
+            final profileResult = await isProfileCompleteUseCase(NoParams());
+            
+            profileResult.fold(
+              (failure) {
+                // If check fails, navigate to main page (default behavior)
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => BlocProvider.value(
+                      value: context.read<AuthBloc>(),
+                      child: const MainPage(),
+                    ),
+                  ),
+                );
+              },
+              (isComplete) {
+                if (isComplete) {
+                  // Attendee profile is complete, navigate to main page
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => BlocProvider.value(
+                        value: context.read<AuthBloc>(),
+                        child: const MainPage(),
+                      ),
+                    ),
+                  );
+                } else {
+                  // Attendee profile is incomplete, navigate to complete profile page
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => BlocProvider.value(
+                        value: context.read<AuthBloc>(),
+                        child: const CompleteProfilePage(),
+                      ),
+                    ),
+                  );
+                }
+              },
+            );
+          }
         } else if (state is AuthError) {
           // Show error message
           ScaffoldMessenger.of(context).showSnackBar(

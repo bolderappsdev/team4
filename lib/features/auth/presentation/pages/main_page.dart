@@ -21,7 +21,6 @@ class _MainPageState extends State<MainPage> {
     if (isOrganizer) {
       return const [
         OrganizerHomePage(),
-        MyAttendancePage(),
         ProfilePage(),
       ];
     }
@@ -68,185 +67,330 @@ class _MainPageState extends State<MainPage> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container(
-      width: 375,
-      height: 96,
-      decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 0.50,
-            strokeAlign: BorderSide.strokeAlignCenter,
-            color: const Color(0xFFF2F3F6),
-          ),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Home Tab
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _currentIndex = 0;
-                        });
-                      },
-                      child: Container(
-                        height: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              child: Icon(
-                                Icons.home,
-                                size: 24,
-                                color: _currentIndex == 0
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF667084),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Home',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _currentIndex == 0
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF667084),
-                                fontSize: 12,
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w400,
-                                height: 1.33,
-                                letterSpacing: -0.08,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // My Attendance Tab
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _currentIndex = 1;
-                        });
-                      },
-                      child: Container(
-                        height: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              child: Icon(
-                                Icons.event_available,
-                                size: 24,
-                                color: _currentIndex == 1
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF667084),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'My Attendance',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _currentIndex == 1
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF667084),
-                                fontSize: 12,
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w400,
-                                height: 1.33,
-                                letterSpacing: -0.08,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Profile Tab
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _currentIndex = 2;
-                        });
-                      },
-                      child: Container(
-                        height: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              child: Icon(
-                                Icons.person,
-                                size: 24,
-                                color: _currentIndex == 2
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF667084),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Profile',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _currentIndex == 2
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF667084),
-                                fontSize: 12,
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w400,
-                                height: 1.33,
-                                letterSpacing: -0.08,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final isOrganizer = authState is AuthAuthenticated &&
+            authState.user.isOrganizer;
+        
+        if (isOrganizer) {
+          // Organizer: 2 tabs (Home, Profile)
+          return Container(
+            width: double.infinity,
+            height: 96,
+            decoration: ShapeDecoration(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(
+                  width: 0.50,
+                  strokeAlign: BorderSide.strokeAlignCenter,
+                  color: const Color(0xFFF2F3F6),
+                ),
               ),
             ),
-          ),
-          // Safe area spacer
-          Container(
-            width: 375,
-            height: 34,
-            child: const SizedBox(),
-          ),
-        ],
-      ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Home Tab
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentIndex = 0;
+                              });
+                            },
+                            child: Container(
+                              height: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    child: Icon(
+                                      Icons.home,
+                                      size: 24,
+                                      color: _currentIndex == 0
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Home',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _currentIndex == 0
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                      fontSize: 12,
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.33,
+                                      letterSpacing: -0.08,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Profile Tab
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentIndex = 1;
+                              });
+                            },
+                            child: Container(
+                              height: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 24,
+                                      color: _currentIndex == 1
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Profile',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _currentIndex == 1
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                      fontSize: 12,
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.33,
+                                      letterSpacing: -0.08,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Safe area spacer
+                Container(
+                  width: double.infinity,
+                  height: 34,
+                  child: const SizedBox(),
+                ),
+              ],
+            ),
+          );
+        } else {
+          // Attendee: 3 tabs (Home, My Attendance, Profile)
+          return Container(
+            width: double.infinity,
+            height: 96,
+            decoration: ShapeDecoration(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(
+                  width: 0.50,
+                  strokeAlign: BorderSide.strokeAlignCenter,
+                  color: const Color(0xFFF2F3F6),
+                ),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Home Tab
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentIndex = 0;
+                              });
+                            },
+                            child: Container(
+                              height: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    child: Icon(
+                                      Icons.home,
+                                      size: 24,
+                                      color: _currentIndex == 0
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Home',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _currentIndex == 0
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                      fontSize: 12,
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.33,
+                                      letterSpacing: -0.08,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // My Attendance Tab
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentIndex = 1;
+                              });
+                            },
+                            child: Container(
+                              height: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    child: Icon(
+                                      Icons.event_available,
+                                      size: 24,
+                                      color: _currentIndex == 1
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'My Attendance',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _currentIndex == 1
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                      fontSize: 12,
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.33,
+                                      letterSpacing: -0.08,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Profile Tab
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentIndex = 2;
+                              });
+                            },
+                            child: Container(
+                              height: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 24,
+                                      color: _currentIndex == 2
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Profile',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _currentIndex == 2
+                                          ? const Color(0xFFDC2626)
+                                          : const Color(0xFF667084),
+                                      fontSize: 12,
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.33,
+                                      letterSpacing: -0.08,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Safe area spacer
+                Container(
+                  width: double.infinity,
+                  height: 34,
+                  child: const SizedBox(),
+                ),
+              ],
+            ),
+          );
+        }
+      },
     );
   }
 }

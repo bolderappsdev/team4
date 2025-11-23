@@ -60,6 +60,7 @@ class Event extends Equatable {
   final List<TicketType> ticketTypes;
   final String? imagePath;
   final String status; // pending, approved, published, cancelled
+  final List<String>? agenda; // Optional list of agenda items
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -75,6 +76,7 @@ class Event extends Equatable {
     required this.ticketTypes,
     this.imagePath,
     required this.status,
+    this.agenda,
     required this.createdAt,
     this.updatedAt,
   });
@@ -114,6 +116,7 @@ class Event extends Equatable {
         ticketTypes,
         imagePath,
         status,
+        agenda,
         createdAt,
         updatedAt,
       ];
