@@ -30,7 +30,8 @@ jobs:
 
       - name: Install Cursor CLI
         run: |
-          curl -fsSL https://cursor.sh/install-cli.sh | bash -s -- -d /usr/local/bin
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
 
       - name: Run Cursor on changed files only
         env:
@@ -38,11 +39,11 @@ jobs:
         run: |
           f="${{ steps.diff.outputs.files }}"
           if [ -z "$f" ]; then
-          echo "No changed files to review."
-          exit 0
+            echo "No changed files to review."
+            exit 0
           fi
           printf "%s\n" $f > changed_files.txt
-          # Use full path to cursor binary
+          # call cursor via full path to be safe
           $HOME/.cursor/bin/cursor review $(cat changed_files.txt | tr '\n' ' ') > review_output.txt || true
 
       - name: Create issue with review
