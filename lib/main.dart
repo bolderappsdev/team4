@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<AuthBloc>(),
       child: Material(
-        title: 'LeadRight',
+        title: 'LeadRight'
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
