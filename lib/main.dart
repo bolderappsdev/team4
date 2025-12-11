@@ -10,7 +10,7 @@ import 'package:leadright/firebase_options.dart';
 import 'package:leadright/presentation/theme/app_theme.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized()
   
   // Initialize Firebase
   await Firebase.initializeApp(
