@@ -34,18 +34,18 @@ jobs:
           echo "$HOME/.cursor/bin" >> $GITHUB_PATH
 
       - name: Run Cursor on changed files only
+        shell: bash
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          PATH: $HOME/.local/bin:$PATH
+          PATH: $HOME/.local/bin:/usr/bin:/bin:$PATH
         run: |
           f="${{ steps.diff.outputs.files }}"
           if [ -z "$f" ]; then
-          echo "No changed files to review."
+            echo "No changed files to review."
           exit 0
           fi
           printf "%s\n" $f > changed_files.txt
-          cursor-agent review $(cat changed_files.txt | tr '\n' ' ') > review_output.txt || true
-
+          $HOME/.local/bin/cursor-agent review $(cat changed_files.txt | tr '\n' ' ') > review_output.txt || true
       - name: Create issue with review
         if: steps.diff.outputs.files != ''
         env:
