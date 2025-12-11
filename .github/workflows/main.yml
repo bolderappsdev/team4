@@ -39,15 +39,12 @@ jobs:
         run: |
           f="${{ steps.diff.outputs.files }}"
           if [ -z "$f" ]; then
-            echo "No changed files to review."
-            echo "review_output=No changed files" >> $GITHUB_OUTPUT
-            exit 0
+          echo "No changed files to review."
+          exit 0
           fi
           printf "%s\n" $f > changed_files.txt
-          cursor review $(cat changed_files.txt | tr '\n' ' ') > review_output.txt || true
-          echo "review_output<<EOF" >> $GITHUB_OUTPUT
-          cat review_output.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use full path to cursor binary
+          $HOME/.cursor/bin/cursor review $(cat changed_files.txt | tr '\n' ' ') > review_output.txt || true
 
       - name: Create issue with review
         if: steps.diff.outputs.files != ''
