@@ -34,14 +34,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<AuthBloc>(),
-      child: MaterialApp(
-        title: 'LeadRight',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
-        home: const OnboardingPage(),
-        debugShowCheckedModeBanner: false,
-      ),
+      child: HElloWidget()
     );
   }
 }
