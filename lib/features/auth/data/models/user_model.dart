@@ -6,7 +6,7 @@ import 'package:leadright/features/auth/domain/entities/user.dart';
 part 'user_model.g.dart';
 
 /// Data model for User entity with JSON serialization.
-///
+/// Comment
 /// This model is used in the data layer for Firebase Firestore
 /// and converts to/from the domain User entity.
 @JsonSerializable()
