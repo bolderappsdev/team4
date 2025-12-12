@@ -45,7 +45,7 @@ jobs:
           exit 0
           fi
           printf "%s\n" $f > changed_files.txt
-          $HOME/.local/bin/cursor-agent review $(cat changed_files.txt | tr '\n' 'review the code with the best practises of development and return Slack-compatible syntax Use *bold* for headings.•	Use manual bullets (•) or just plain lines.•	Numbered lists render only as plain text.•	Avoid ##, ###, lists, tables. keep short and efficient ') > review_output.txt || true
+          $HOME/.local/bin/cursor-agent review $(cat changed_files.txt | tr '\n' 'review them and give some optimal examples of how the code has to be') > review_output.txt || true
       - name: Create issue with review
         if: steps.diff.outputs.files != ''
         env:
