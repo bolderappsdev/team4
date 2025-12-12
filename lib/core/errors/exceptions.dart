@@ -32,10 +32,6 @@ class AuthException extends AppException {
   AuthException([String message = 'Authentication failed']) : super(message);
 }
 
-/// Validation exception.
-class ValidationException extends AppException {
-  ValidationException([String message = 'Validation failed']) : super(message);
-}
 
 /// Permission exception.
 class PermissionException extends AppException {
